@@ -8,7 +8,8 @@ Author URI: https://seocontenidos.net/
 License: GPLv2 or later
 Text Domain: wpListTable
 */
-add_action( 'admin_menu' , 'wpListTable');
+add_action( 'init' , 'menu' );
+
 
 function wpListTable(){
     add_menu_page(
@@ -18,6 +19,9 @@ function wpListTable(){
         'list-table',
         'list_table_fn'
     );
+}
+function menu(){
+    add_action( 'admin_menu' , 'wpListTable');
 }
 function list_table_fn(){
     

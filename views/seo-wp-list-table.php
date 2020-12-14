@@ -1,23 +1,31 @@
 <?php
 if(!class_exists('Lib')){
-    require_once( ABSPATH . 'wp-content/plugins/wp_list_table/Lib.php');
+    require_once( ABSPATH . 'wp-content/plugins/wp-list-table/Lib.php');
 }
 
 class WPListTable extends Lib{
-    
-   
-
     public function prepare_items(){
-
         $orderby = isset($_GET['orderby']) ? trim($_GET['orderby']) : "" ;
         $order   = isset($_GET['order'])   ? trim($_GET['order'])   : "" ;
 
         $search_term = isset($_POST['s'])  ? trim($_POST['s']) : "";
+        $datas = $this->wp_list_table_data($orderby,$order,$search_term);
+        
+        $per_page = 4;
+       
 
-        $this->items = $this->wp_list_table_data($orderby,$order,$search_term);
+        $current_page = $this->get_pagenum();
+        $total_items = count($datas);
 
-        $columns = $this->get_columns();
-        $hidden = $this->get_hidden_columns();
+        $this->set_pagination_args(array(
+            'total_items' => $total_items,
+            'per_page'    => $per_page
+        ));
+
+        $this->items = array_slice($datas , (($current_page - 1) * $per_page),$per_page);
+
+        $columns  = $this->get_columns();
+        $hidden   = $this->get_hidden_columns();
         $sortable = $this->get_sortable_columns();
 
         $this->_column_headers = array($columns,$hidden,$sortable);
@@ -27,12 +35,7 @@ class WPListTable extends Lib{
     public function wp_list_table_data($orderby='' , $order='', $search_term=''){
 
         global $wpdb;
-        
-        // $args = array(
-        //     'numberposts' => -1,
-        //     'suppress_filters' => false
-        // );
-        // $all_posts2 = get_post($args);
+ 
         if( !empty($search_term) ){
             echo 'buscar';
             $all_posts = $wpdb->get_results(
@@ -89,6 +92,7 @@ class WPListTable extends Lib{
             'title' => 'Title',
             // 'content' => 'Content',
             'slug' => 'Post Slug',
+            'action' => 'Action'
         );
 
         return $columns;
@@ -101,12 +105,26 @@ class WPListTable extends Lib{
             case 'content':
             case 'slug':
                 return $item[$column_name];
+            case 'action':
+                return '<a href="?page='.$_GET['page'].'&action=list-edit&post_id='.$item['id'].'" >Edit</a> | <a href="?page='.$_GET['page'].'&action=list-delete&post_id='.$item['id'].'"a>Delete</a>';
             default:
                  return print_r($item , true);
         }
     }
+
+    public function column_title($item){
+        // $action= array(
+        //     "edit" => sprintf('<a href ="?page=%s$&action=%s&post_id=%s">Edit</a>', $_GET['page'],'list-edit',$item['id']),
+        //     "delete" => sprintf('<a href ="?page=%s$&action=%s&post_id=%s">Delete</a>', $_GET['page'],'list-delete',$item['id'])
+        // );
+        $action= array(
+            "edit" => "<a href='?page=".$_GET['page']."&action=list-edit&post_id=".$item['id'] . "'>Edit</a>",
+            "delete" => "<a href='?page=".$_GET['page']."&action=list-delete&post_id=".$item['id'] . "'>delete</a>"
+        );
+        return sprintf('%1$s %2$s', $item['title'],$this->row_actions($action));
+    }
    
-}
+}//end class
 
 function show_data_wp_list_table(){
     $wp_table = new WPListTable();
@@ -122,4 +140,4 @@ function show_data_wp_list_table(){
 
 }
 
- show_data_wp_list_table();
+    show_data_wp_list_table();
